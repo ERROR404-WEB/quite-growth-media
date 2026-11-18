@@ -1,0 +1,45 @@
+import { GLOBAL_CONTENT_RULES, PLATFORMS_ALL, SELF_IMPROVEMENT_SLOTS } from '../shared.js';
+import type { BrandConfig } from '../types.js';
+
+export const ninnuNuvvuGeluvu: BrandConfig = {
+  id: 'ninnu-nuvvu-geluvu',
+  brandNumber: 6,
+  displayName: 'Ninnu Nuvvu Geluvu',
+  nativeName: 'నిన్ను నువ్వు గెలువు',
+  language: 'te',
+  locale: 'te-IN',
+  audience: 'Telugu-speaking viewers',
+  niche: 'self_improvement',
+  tradition: 'none',
+  madeForKids: false,
+  dailyVideoTarget: 3,
+  publishTimezone: 'Asia/Kolkata',
+  platforms: [...PLATFORMS_ALL],
+  contentSlots: SELF_IMPROVEMENT_SLOTS,
+  topics: [
+    'Mindset',
+    'Confidence',
+    'Discipline',
+    'Habits',
+    'Emotional intelligence',
+    'Relationships',
+    'Personal development',
+    'Motivation',
+    'Self-respect',
+    'Productivity',
+  ],
+  validation: { factCheck: true, scriptureCheck: false, childSafety: false },
+  contentRules: [
+    ...GLOBAL_CONTENT_RULES,
+    'Write in natural spoken Telugu (Telugu script) with Telugu-region everyday situations; never translate Hindi or English scripts.',
+    'Psychology claims must be accurate and not presented as medical or therapeutic advice.',
+  ],
+  visualIdentity: {
+    style: 'Warm textured illustration with cinematic framing of Telugu home, college and village/city life',
+    palette: ['#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#FFFDF7'],
+    typography: 'Clear Telugu sans-serif with accent underlines on key words',
+    characterNotes: 'Own recurring characters distinct from Behtar Bano and Quiet Growth',
+    pacing: 'Story-first micro scenarios with a clear takeaway',
+    avoid: ['Get-rich-quick imagery', 'Shaming viewers', 'Copying other brands’ scenes'],
+  },
+};

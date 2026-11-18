@@ -1,0 +1,45 @@
+import { GLOBAL_CONTENT_RULES, PLATFORMS_ALL, SELF_IMPROVEMENT_SLOTS } from '../shared.js';
+import type { BrandConfig } from '../types.js';
+
+export const behtarBano: BrandConfig = {
+  id: 'behtar-bano',
+  brandNumber: 5,
+  displayName: 'Behtar Bano',
+  nativeName: 'बेहतर बनो',
+  language: 'hi',
+  locale: 'hi-IN',
+  audience: 'Hindi-speaking viewers',
+  niche: 'self_improvement',
+  tradition: 'none',
+  madeForKids: false,
+  dailyVideoTarget: 3,
+  publishTimezone: 'Asia/Kolkata',
+  platforms: [...PLATFORMS_ALL],
+  contentSlots: SELF_IMPROVEMENT_SLOTS,
+  topics: [
+    'Mindset',
+    'Confidence',
+    'Discipline',
+    'Habits',
+    'Emotional intelligence',
+    'Relationships',
+    'Personal development',
+    'Motivation',
+    'Self-respect',
+    'Productivity',
+  ],
+  validation: { factCheck: true, scriptureCheck: false, childSafety: false },
+  contentRules: [
+    ...GLOBAL_CONTENT_RULES,
+    'Write in conversational Hindi (Devanagari) with relatable Indian everyday situations; never translate Quiet Growth scripts.',
+    'Psychology claims must be accurate and not presented as medical or therapeutic advice.',
+  ],
+  visualIdentity: {
+    style: 'Bold flat illustration of everyday Indian life - students, families, workplaces, city streets',
+    palette: ['#1D3557', '#E63946', '#F1FAEE', '#A8DADC', '#FFB703'],
+    typography: 'Strong Devanagari sans-serif with keyword highlights',
+    characterNotes: 'Recurring relatable young-adult characters with consistent outfits and features',
+    pacing: 'Energetic but clear; quick scene changes with readable captions',
+    avoid: ['Get-rich-quick imagery', 'Shaming viewers', 'Copying Quiet Growth scenes'],
+  },
+};

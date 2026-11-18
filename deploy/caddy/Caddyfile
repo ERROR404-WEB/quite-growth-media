@@ -1,0 +1,30 @@
+# Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+# Domains and email come from deploy/.env. The dashboard login lives in
+# dashboard-auth.caddy, created by deploy/scripts/set-dashboard-password.sh (not committed).
+{
+	email {$ACME_EMAIL}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+# Control-room dashboard + API (password protected).
+{$APP_DOMAIN} {
+	import security_headers
+	encode zstd gzip
+	import dashboard-auth.caddy
+	reverse_proxy api:3000
+}
+
+# n8n editor (n8n has its own owner login).
+{$N8N_DOMAIN} {
+	import security_headers
+	encode zstd gzip
+	reverse_proxy n8n:5678
+}

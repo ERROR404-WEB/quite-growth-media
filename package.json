@@ -1,0 +1,60 @@
+{
+  "name": "quiet-growth-media",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quiet Growth Media Network - nine-brand automated AI media-production platform",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "db:migrate": "tsx src/db/cli.ts migrate",
+    "db:seed": "tsx src/db/cli.ts seed",
+    "db:status": "tsx src/db/cli.ts status",
+    "stack:up": "docker compose up -d",
+    "stack:down": "docker compose down",
+    "stack:ps": "docker compose ps",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "setup:env": "node scripts/setup-env.mjs",
+    "video:demo": "tsx src/media/demo/run.ts",
+    "pg:init": "node scripts/local-pg.mjs init",
+    "pg:start": "node scripts/local-pg.mjs start",
+    "pg:stop": "node scripts/local-pg.mjs stop",
+    "pg:status": "node scripts/local-pg.mjs status",
+    "n8n:start": "node scripts/n8n-local.mjs",
+    "n8n:bootstrap": "node scripts/n8n-bootstrap.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "fastify": "^5.12.8",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "pino-pretty": "^13.2.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

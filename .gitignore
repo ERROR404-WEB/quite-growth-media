@@ -1,0 +1,25 @@
+# Dependencies & build output
+node_modules/
+dist/
+coverage/
+
+# Secrets - never commit real credentials
+.env
+.env.*
+!.env.example
+.github/copilot/settings.local.json
+deploy/caddy/dashboard-auth.caddy
+
+# Local runtime data (renders, generated media, backups, local postgres cluster)
+data/
+.tools/
+*.log
+.github/hooks/*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/

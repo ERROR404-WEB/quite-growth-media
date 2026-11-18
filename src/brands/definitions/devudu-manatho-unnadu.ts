@@ -1,0 +1,46 @@
+import { DEVOTIONAL_SLOTS, GLOBAL_CONTENT_RULES, HINDU_DEVOTIONAL_RULES, PLATFORMS_ALL } from '../shared.js';
+import type { BrandConfig } from '../types.js';
+
+export const devuduManathoUnnadu: BrandConfig = {
+  id: 'devudu-manatho-unnadu',
+  brandNumber: 4,
+  displayName: 'Devudu Manatho Unnadu',
+  nativeName: 'దేవుడు మనతో ఉన్నాడు',
+  language: 'te',
+  locale: 'te-IN',
+  audience: 'Telugu-speaking viewers',
+  niche: 'hindu_devotional',
+  tradition: 'hindu',
+  madeForKids: false,
+  dailyVideoTarget: 3,
+  publishTimezone: 'Asia/Kolkata',
+  platforms: [...PLATFORMS_ALL],
+  contentSlots: DEVOTIONAL_SLOTS,
+  topics: [
+    'Krishna',
+    'Shiva',
+    'Hanuman',
+    'Rama',
+    'Vishnu',
+    'Bhagavad Gita',
+    'Ramayana',
+    'Mahabharata',
+    'Hindu stories',
+    'Devotional teachings',
+    'Mantras and their meanings',
+  ],
+  validation: { factCheck: true, scriptureCheck: true, childSafety: false },
+  contentRules: [
+    ...GLOBAL_CONTENT_RULES,
+    ...HINDU_DEVOTIONAL_RULES,
+    'Write in natural spoken Telugu (Telugu script); never translate Hindi or English devotional scripts.',
+  ],
+  visualIdentity: {
+    style: 'Temple-mural inspired original illustration with warm lamp light and South Indian settings',
+    palette: ['#B22222', '#DAA520', '#2E8B57', '#FFF0D9', '#4B2E83'],
+    typography: 'Bold Telugu display font for titles, readable Telugu sans for captions',
+    characterNotes: 'Respectful, consistent depictions of deities with a distinct look from the Hindi brand',
+    pacing: 'Narrative pacing with soft camera moves; slower for mantras and teachings',
+    avoid: ['Disrespectful or comic depictions of deities', 'Fear-based messaging', 'Unverified miracles'],
+  },
+};

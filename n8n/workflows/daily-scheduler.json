@@ -1,0 +1,96 @@
+{
+  "id": "qgmDailySchedul1",
+  "name": "QGM - Daily content scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "5f0b6c1e-0001-4a51-9a3e-000000000001",
+      "name": "Every day 06:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {},
+      "id": "5f0b6c1e-0002-4a51-9a3e-000000000002",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "apiBaseUrl",
+              "value": "http://127.0.0.1:3000",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5f0b6c1e-0003-4a51-9a3e-000000000003",
+      "name": "Config (edit API URL here)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [240, 100],
+      "notes": "Native n8n: http://127.0.0.1:3000 | n8n in Docker Desktop: http://host.docker.internal:3000 | VPS compose: http://api:3000"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.apiBaseUrl }}/api/schedule/daily",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "5f0b6c1e-0004-4a51-9a3e-000000000004",
+      "name": "Enqueue 27 daily jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qgmAdminToken001",
+          "name": "QGM Admin Token"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notes": "Idempotent: calling twice on the same day creates no duplicates. Uses the 'QGM Admin Token' Header Auth credential."
+    }
+  ],
+  "connections": {
+    "Every day 06:00": {
+      "main": [[{ "node": "Config (edit API URL here)", "type": "main", "index": 0 }]]
+    },
+    "Run manually": {
+      "main": [[{ "node": "Config (edit API URL here)", "type": "main", "index": 0 }]]
+    },
+    "Config (edit API URL here)": {
+      "main": [[{ "node": "Enqueue 27 daily jobs", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
