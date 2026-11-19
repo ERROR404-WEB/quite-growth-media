@@ -43,6 +43,38 @@ export async function dashboardRoutes(app: FastifyInstance, deps: AppDeps): Prom
       )
     ).rows;
 
+    const pubCounts = (
+      await deps.db.query<{ status: string; count: number }>(
+        'SELECT status, count(*)::int AS count FROM publications GROUP BY 1 ORDER BY 1',
+      )
+    ).rows;
+    const upcoming = (
+      await deps.db.query<{
+        brand_id: string;
+        platform: string;
+        status: string;
+        scheduled_for: Date | null;
+        title: string | null;
+        last_error: string | null;
+      }>(
+        `SELECT p.brand_id, p.platform, p.status, p.scheduled_for, v.title, p.last_error
+           FROM publications p JOIN videos v ON v.id = p.video_id
+          WHERE p.status <> 'published' OR p.published_at > now() - interval '1 day'
+          ORDER BY p.scheduled_for NULLS LAST LIMIT 30`,
+      )
+    ).rows;
+    const videoCount = (
+      await deps.db.query<{ rendered: number; passed: number }>(
+        `SELECT count(*)::int AS rendered, count(*) FILTER (WHERE qa_status = 'passed')::int AS passed FROM videos`,
+      )
+    ).rows[0] ?? { rendered: 0, passed: 0 };
+    const spentToday = (
+      await deps.db.query<{ total: string | null }>(
+        `SELECT sum(amount) AS total FROM cost_records WHERE incurred_at >= date_trunc('day', now() AT TIME ZONE $1::text) AT TIME ZONE $1::text`,
+        [deps.env.APP_TIMEZONE],
+      )
+    ).rows[0]?.total;
+
     const countFor = (brandId: string, status: string) =>
       counts.find((c) => c.brand_id === brandId && c.status === status)?.count ?? 0;
     const dailyTotal = brands.filter((b) => b.is_active).reduce((sum, b) => sum + b.daily_video_target, 0);
@@ -69,6 +101,16 @@ export async function dashboardRoutes(app: FastifyInstance, deps: AppDeps): Prom
           .join('')
       : '<tr><td colspan="4">No quarantined jobs.</td></tr>';
 
+    const publicationRows = upcoming.length
+      ? upcoming
+          .map(
+            (p) =>
+              `<tr><td>${escapeHtml(p.scheduled_for?.toISOString().replace('T', ' ').slice(0, 16) ?? '')} UTC</td><td>${escapeHtml(p.brand_id)}</td><td>${escapeHtml(p.platform)}</td><td>${escapeHtml(p.title)}</td><td class="p-${escapeHtml(p.status)}">${escapeHtml(p.status)}</td><td>${escapeHtml(p.last_error)}</td></tr>`,
+          )
+          .join('')
+      : '<tr><td colspan="6">No publications yet.</td></tr>';
+    const pubSummary = pubCounts.map((c) => `${escapeHtml(c.status)}: ${c.count}`).join(' · ') || 'none';
+
     const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="30">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -84,15 +126,18 @@ export async function dashboardRoutes(app: FastifyInstance, deps: AppDeps): Prom
   th{background:#2f3e46;color:#fff;font-weight:600} .num{text-align:right}
   .s-quarantined{color:#b91c1c;font-weight:600} .s-succeeded{color:#15803d}
   .tag{background:#ffd166;border-radius:4px;padding:0 .35rem;font-size:.75rem}
+  .p-published{color:#15803d} .p-failed,.p-needs_check,.p-skipped{color:#b91c1c;font-weight:600}
 </style></head>
 <body>
 <h1>Quiet Growth Media Network</h1>
-<div class="muted">Control room - auto-refreshes every 30s. Phase 3 core (no content generation yet).</div>
+<div class="muted">Control room - auto-refreshes every 30s. Daily pipeline: plan → storyboard → script → render → publish.</div>
 <div class="cards">
   <div class="card"><b>${brands.length}</b>brands</div>
   <div class="card"><b>${dailyTotal}</b>videos / day target</div>
   <div class="card"><b>${dailyTotal * 4}</b>publishing actions / day (max)</div>
   <div class="card"><b>${quarantined.length}</b>quarantined jobs</div>
+  <div class="card"><b>${videoCount.passed}/${videoCount.rendered}</b>videos passed QA</div>
+  <div class="card"><b>$${Number(spentToday ?? 0).toFixed(2)}</b>AI spend today</div>
 </div>
 <h2>Brands &amp; job pipeline</h2>
 <table><thead><tr><th>#</th><th>Brand</th><th>Lang</th><th>Niche</th><th>Daily</th>
@@ -101,8 +146,13 @@ ${JOB_STATUSES.map((s) => `<th class="num">${s}</th>`).join('')}</tr></thead>
 <h2>Quarantine</h2>
 <table><thead><tr><th>Job</th><th>Brand</th><th>Type</th><th>Last error</th></tr></thead>
 <tbody>${quarantineRows}</tbody></table>
+<h2>Publishing</h2>
+<div class="muted">Publications: ${pubSummary}</div>
+<table><thead><tr><th>Scheduled</th><th>Brand</th><th>Platform</th><th>Video</th><th>Status</th><th>Last error</th></tr></thead>
+<tbody>${publicationRows}</tbody></table>
 <p class="muted">API: <a href="/health/ready">/health/ready</a> · <a href="/api/brands">/api/brands</a> ·
-<a href="/api/jobs">/api/jobs</a> · <a href="/api/jobs/summary">/api/jobs/summary</a></p>
+<a href="/api/jobs">/api/jobs</a> · <a href="/api/jobs/summary">/api/jobs/summary</a> ·
+<a href="/api/videos">/api/videos</a> · <a href="/api/publications">/api/publications</a></p>
 </body></html>`;
     return reply.type('text/html; charset=utf-8').send(html);
   });

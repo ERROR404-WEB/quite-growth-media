@@ -92,6 +92,17 @@ export async function markFailed(
   return willRetry ? 'queued' : 'quarantined';
 }
 
+/** Re-queues a running job for later without consuming the attempt it just used. */
+export async function deferJob(db: Queryable, jobId: string, runAt: Date, reason: string): Promise<void> {
+  await db.query(
+    `UPDATE generation_jobs
+        SET status = 'queued', attempts = GREATEST(attempts - 1, 0), run_at = $2, last_error = $3,
+            locked_at = NULL, locked_by = NULL
+      WHERE id = $1 AND status = 'running'`,
+    [jobId, runAt, reason.slice(0, MAX_ERROR_LENGTH)],
+  );
+}
+
 /** Re-queues jobs whose worker died mid-run (lock older than the threshold). */
 export async function recoverStaleJobs(db: Queryable, staleMinutes: number): Promise<number> {
   const res = await db.query(

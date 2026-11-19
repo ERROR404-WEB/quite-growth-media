@@ -19,6 +19,13 @@ Brand configs are typed TypeScript objects validated by zod (`src/brands/types.t
 - Hindu devotional brands: `tradition: 'hindu'` and `validation.scriptureCheck: true`.
 - Every brand's `contentRules` must include the global rules (`GLOBAL_CONTENT_RULES`), especially the rule against translating across brands.
 - `visualIdentity` must be distinct per brand. Never reuse another brand's characters or palette verbatim.
+  - Optional look settings: `grade` (saturation, contrast, grain, vignette, `vignetteAngle`, `temperature`, `fade`, `dust`), `captionStyle` (`bold` default, or `soft_handwritten` for the centred Kalam/Timmana reference look) and `motion` (`strength`, `transition`).
+  - The 3 self-improvement brands share `VINTAGE_FILM_GRADE`, `CALM_MOTION` and `soft_handwritten` captions (creative direction v3). Keep them in sync with docs/creative-direction.md.
+- `voice` gives each brand one fixed narrator: a casting `direction`, `elevenLabs` (voice ID, name, `source`), reviewed `alternatives` and optional `settings` (`stability`, `speed` 0.7–1.2).
+  - No two brands may share a voice (`validateBrands` enforces this).
+  - Kids brands use an original **designed** mascot voice, with `designPrompt` + `previewText` in the brand language (`npm run voices:design`).
+  - Never use Library voices "inspired by" existing characters.
+  - See docs/voices.md.
 
 ## Steps
 

@@ -1,5 +1,9 @@
 import { statSync } from 'node:fs';
+import type { DurationTarget } from '../brands/types.js';
+import type { Platform } from '../domain/constants.js';
 import { durationBucketFor } from '../domain/constants.js';
+import type { AudioAsset } from './audio-library.js';
+import { rightsDecision } from './audio-library.js';
 import type { FfmpegTools } from './ffmpeg.js';
 import { resolveFfmpeg, run } from './ffmpeg.js';
 
@@ -175,3 +179,49 @@ export function evaluateVideo(p: VideoProbe, expect: QaExpectations): QaCheck[] 
 }
 
 export const qaPassed = (checks: readonly QaCheck[]) => checks.every((c) => c.status !== 'failed');
+
+/**
+ * Copyright & rights QA (creative direction §17): every third-party audio file in the video must be an
+ * approved library asset cleared for all intended platforms, and the file must be the exact one licensed.
+ */
+export function evaluateAudioRights(
+  used: readonly { asset: AudioAsset; fileSha256: string }[],
+  platforms: readonly Platform[],
+  opts: { canPublishAttribution?: boolean } = {},
+): QaCheck {
+  if (used.length === 0) {
+    return {
+      name: 'audio_rights',
+      status: 'passed',
+      detail: 'no third-party audio (narration and original sound only)',
+    };
+  }
+  const problems = used.flatMap(({ asset, fileSha256 }) => [
+    ...rightsDecision(asset, platforms, opts).reasons.map((r) => `${asset.assetCode}: ${r}`),
+    ...(fileSha256 === asset.checksumSha256
+      ? []
+      : [`${asset.assetCode}: file checksum does not match the licensed file`]),
+  ]);
+  return problems.length
+    ? { name: 'audio_rights', status: 'failed', detail: problems.join('; ') }
+    : {
+        name: 'audio_rights',
+        status: 'passed',
+        detail: `${used.length} licensed asset(s) verified for ${platforms.join(', ')}`,
+      };
+}
+
+/** Brand length preference (e.g. 15–28 s); a soft check - the hard 7–45 s limit is in evaluateVideo. */
+export function evaluateDurationTarget(
+  durationSec: number,
+  target: DurationTarget | undefined,
+): QaCheck | null {
+  if (!target) return null;
+  const inRange = durationSec >= target.minSec && durationSec <= target.maxSec;
+  const ideal = durationSec >= target.idealMinSec && durationSec <= target.idealMaxSec;
+  return {
+    name: 'duration_target',
+    status: inRange ? 'passed' : 'warning',
+    detail: `${durationSec.toFixed(1)} s (brand target ${target.minSec}–${target.maxSec} s, ideal ${target.idealMinSec}–${target.idealMaxSec} s${ideal ? ', ideal' : ''})`,
+  };
+}

@@ -51,4 +51,13 @@ export const nanheSitare: BrandConfig = {
       'Flashing lights',
     ],
   },
+  voice: {
+    direction:
+      'Chamku, an original cartoon little-star mascot: high-pitched, bubbly, funny and kind; sing-song for Hindi rhymes, gentle for stories.',
+    designPrompt:
+      'Native Hindi speaker with clear, standard Hindi pronunciation. An original animated cartoon character voice: Chamku, a tiny, twinkly little star. High-pitched, bright, bubbly and funny, with playful giggles and a gentle sing-song rhythm for Hindi rhymes and bedtime stories. Warm and kind, never shrill, harsh or loud. Clean, studio-quality recording.',
+    previewText:
+      'नमस्ते दोस्तों! मैं हूँ चमकू, आसमान का नन्हा सितारा। आज हम मिलकर गिनती गाएँगे। एक, दो, तीन, चार... देखो, कितने सारे तारे टिमटिमा रहे हैं! चलो, ताली बजाओ और मेरे साथ गाओ, ला ला ला!',
+    alternatives: [],
+  },
 };

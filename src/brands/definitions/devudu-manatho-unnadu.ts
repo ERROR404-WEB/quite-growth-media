@@ -43,4 +43,17 @@ export const devuduManathoUnnadu: BrandConfig = {
     pacing: 'Narrative pacing with soft camera moves; slower for mantras and teachings',
     avoid: ['Disrespectful or comic depictions of deities', 'Fear-based messaging', 'Unverified miracles'],
   },
+  voice: {
+    direction:
+      'Mature, wise Telugu male narrator; warm, unhurried and respectful - a gentle elder telling stories and teachings.',
+    elevenLabs: {
+      voiceId: 'EohubqvAiTiSkWCp1vu7',
+      name: 'Srirama V - Interactive, Warm Professor',
+      source: 'library',
+    },
+    alternatives: [
+      { voiceId: 'RoLT1qx7XJRXxWSIG5hS', name: 'Bharadwaj - Profound Telugu Mythology', source: 'library' },
+      { voiceId: 'QKyvRuehpb8zB3cRkzIn', name: 'Seeta - Rich Telugu Story Narrator', source: 'library' },
+    ],
+  },
 };

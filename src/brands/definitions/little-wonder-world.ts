@@ -46,4 +46,13 @@ export const littleWonderWorld: BrandConfig = {
       'Flashing lights',
     ],
   },
+  voice: {
+    direction:
+      'Pip, an original cartoon bunny mascot: high-pitched, bouncy, funny and kind; sing-song for rhymes, gentle for stories.',
+    designPrompt:
+      'American English with clear, simple pronunciation. An original animated cartoon character voice: Pip, a tiny, cheerful bunny. High-pitched, bright and bouncy, playful and a little silly, with warm giggles and a gentle sing-song rhythm for nursery rhymes and bedtime stories. Friendly and kind, never shrill, harsh or loud. Clean, studio-quality recording.',
+    previewText:
+      "Hi, little friends! It's me, Pip the bunny. Today we are counting the stars together. One little star, two little stars, three little stars that twinkle and wink! Let's clap our paws and sing along with me. Clap, clap, hooray!",
+    alternatives: [],
+  },
 };

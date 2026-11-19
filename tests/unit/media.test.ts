@@ -1,7 +1,14 @@
 import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { BRANDS } from '../../src/brands/index.js';
-import { assTime, buildAss, escapeAssText, splitIntoCues } from '../../src/media/captions.js';
+import {
+  assTime,
+  buildAss,
+  chunkCaptionText,
+  escapeAssText,
+  softCaptionText,
+  splitIntoCues,
+} from '../../src/media/captions.js';
 import { crc32, encodePng } from '../../src/media/png.js';
 import { hexToRgb, renderPlaceholderScene } from '../../src/media/placeholder-art.js';
 import type { VideoProbe } from '../../src/media/qa.js';
@@ -63,7 +70,7 @@ describe('timeline', () => {
   it('pads speech and enforces a minimum scene length', () => {
     expect(sceneDuration(3)).toBe(3.7);
     expect(sceneDuration(0.5)).toBe(2.5);
-    expect(estimateSpeechSeconds('one two three four five six', 'en')).toBeCloseTo(6 / 2.6);
+    expect(estimateSpeechSeconds('one two three four five six', 'en')).toBeCloseTo(6 / 2.8);
   });
 
   it('extends streams by the crossfade so the total equals the sum of durations', () => {
@@ -118,6 +125,78 @@ describe('captions', () => {
     expect(ass).toContain('Dialogue: 0,0:00:00.00,0:00:02.00,Caption,,0,0,0,,ఒకటి');
     expect(ass).toContain(',Label,,0,0,0,,DEMO');
   });
+
+  it('renders hook and metaphor cues in the larger warm Emphasis style', () => {
+    const ass = buildAss({
+      width: 1080,
+      height: 1920,
+      language: 'en',
+      cues: [
+        { start: 0, end: 2, text: "You're not lazy.", style: 'emphasis' },
+        { start: 2, end: 4, text: 'It is about carrying less.' },
+      ],
+    });
+    expect(ass).toMatch(/Style: Emphasis,Noto Sans,83,&H0075C4F0/);
+    expect(ass).toContain("Dialogue: 0,0:00:00.00,0:00:02.00,Emphasis,,0,0,0,,You're not lazy.");
+    expect(ass).toContain('Dialogue: 0,0:00:02.00,0:00:04.00,Caption,,0,0,0,,It is about carrying less.');
+  });
+
+  it('builds centred soft handwritten captions (reference look) with a subtle cream emphasis', () => {
+    const ass = buildAss({
+      width: 1080,
+      height: 1920,
+      language: 'en',
+      style: 'soft_handwritten',
+      cues: [
+        { start: 0, end: 2, text: 'Stop shrinking...', style: 'emphasis' },
+        { start: 2, end: 4, text: "It's not weakness." },
+      ],
+    });
+    // Kalam, bold + slanted for English, translucent blurred shadow, centred (alignment 5, no vertical margin).
+    expect(ass).toContain(
+      'Style: Caption,Kalam,67,&H00FFFFFF,&H00FFFFFF,&H50000000,&H80000000,-1,-1,0,0,100,100,0,0,1,3,2,5,108,108,0,1',
+    );
+    expect(ass).toMatch(/Style: Emphasis,Kalam,77,&H00C8E7F6,/);
+    // Lowercase, no trailing punctuation or ellipses, soft blur and fades.
+    expect(ass).toContain(
+      'Dialogue: 0,0:00:00.00,0:00:02.00,Emphasis,,0,0,0,,{\\blur3\\fad(120,120)}stop shrinking',
+    );
+    expect(ass).toContain("Caption,,0,0,0,,{\\blur3\\fad(120,120)}it's not weakness");
+    const te = buildAss({ width: 1080, height: 1920, language: 'te', style: 'soft_handwritten', cues: [] });
+    expect(te).toMatch(/Style: Caption,Timmana,78,&H00FFFFFF,&H00FFFFFF,&H50000000,&H80000000,0,0,/);
+    const hi = buildAss({
+      width: 1080,
+      height: 1920,
+      language: 'hi',
+      style: 'soft_handwritten',
+      cues: [{ start: 0, end: 1, text: 'यह कमज़ोरी नहीं है।' }],
+    });
+    expect(hi).toMatch(/Style: Caption,Kalam,71,&H00FFFFFF,&H00FFFFFF,&H50000000,&H80000000,-1,0,/);
+    expect(hi).toContain('}यह कमज़ोरी नहीं है\n');
+  });
+
+  it('cuts soft captions into balanced 2-4 word chunks (2-3 for Telugu), never a lonely word', () => {
+    expect(chunkCaptionText("It's not rejection. It's selection.", 'en', 'soft_handwritten')).toEqual([
+      "It's not rejection.",
+      "It's selection.",
+    ]);
+    expect(
+      chunkCaptionText('Some people were only ever meant to walk you here', 'en', 'soft_handwritten'),
+    ).toEqual(['Some people were', 'only ever meant', 'to walk you here']);
+    expect(chunkCaptionText('You were never too much for them', 'en', 'soft_handwritten')).toEqual([
+      'You were never',
+      'too much for them',
+    ]);
+    const te = chunkCaptionText('నువ్వు ఎప్పుడూ ఎక్కువ కాదు నీకు', 'te', 'soft_handwritten');
+    expect(te.every((c) => c.split(' ').length <= 3)).toBe(true);
+    expect(te.join(' ')).toBe('నువ్వు ఎప్పుడూ ఎక్కువ కాదు నీకు');
+    // The default bold style keeps its longer lines.
+    expect(chunkCaptionText('You were never too much for them', 'en')).toEqual([
+      'You were never too much for them',
+    ]);
+    expect(softCaptionText('I said... “No.” Fine!', 'en')).toBe('i said no fine');
+    expect(softCaptionText('Why me?', 'en')).toBe('why me?');
+  });
 });
 
 describe('render arguments', () => {
@@ -144,13 +223,16 @@ describe('render arguments', () => {
     const graph = args[args.indexOf('-filter_complex') + 1]!;
     expect(args.join(' ')).toContain('-loop 1 -framerate 30 -t 3.500 -i scene-1.png');
     expect(graph).toContain('xfade=transition=fade:duration=0.5:offset=3.000');
-    expect(graph).toContain('ass=filename=captions.ass:fontsdir=../../assets/fonts:shaping=complex[vout]');
+    expect(graph).toContain(
+      'ass=filename=captions.ass:fontsdir=../../assets/fonts:shaping=complex,scale=out_range=tv,format=yuv420p[vout]',
+    );
     expect(graph).toContain(
       '[2:a]aformat=sample_rates=48000:channel_layouts=stereo,adelay=delays=300:all=1[n0]',
     );
     expect(graph).toContain('amix=inputs=2');
     expect(graph).toContain('loudnorm=I=-16');
     expect(args).toEqual(expect.arrayContaining(['libx264', 'yuv420p', 'aac', '+faststart', 'video.mp4']));
+    expect(args.join(' ')).toContain('-crf 20 -maxrate 8M -bufsize 16M');
     expect(args[args.indexOf('-t', args.indexOf('-map')) + 1]).toBe('6.000');
   });
 
@@ -160,10 +242,63 @@ describe('render arguments', () => {
     expect(graph).not.toContain('aevalsrc');
   });
 
-  it('produces motion filters that end at the output size', () => {
+  it('applies the brand film grade (desaturation, animated grain, vignette) before the captions', () => {
+    const args = buildRenderArgs({ ...spec, grade: { saturation: 0.9, grain: 10, vignette: true } });
+    const graph = args[args.indexOf('-filter_complex') + 1]!;
+    expect(graph).toContain('[x1]eq=saturation=0.9,noise=c0s=10:c0f=t,vignette=angle=PI/6[graded]');
+    expect(graph).toContain('[graded]ass=filename=captions.ass');
+    expect(buildRenderArgs(spec).join(' ')).not.toContain('noise=');
+    const vivid = buildRenderArgs({
+      ...spec,
+      grade: { saturation: 1.06, contrast: 1.05, grain: 4, vignette: false },
+    }).join(' ');
+    expect(vivid).toContain('[x1]eq=saturation=1.06:contrast=1.05,noise=c0s=4:c0f=t[graded]');
+  });
+
+  it('adds the warm lo-fi finish: temperature, faded blacks, procedural dust under a strong vignette', () => {
+    const args = buildRenderArgs({
+      ...spec,
+      grade: {
+        saturation: 0.92,
+        contrast: 1.04,
+        grain: 7,
+        vignette: true,
+        vignetteAngle: 0.8,
+        temperature: 5600,
+        fade: 0.05,
+        dust: true,
+      },
+    });
+    const graph = args[args.indexOf('-filter_complex') + 1]!;
+    expect(graph).toContain(
+      "[x1]eq=saturation=0.92:contrast=1.04,colortemperature=temperature=5600,curves=m='0/0.050 1/0.980',noise=c0s=7:c0f=t[graded]",
+    );
+    expect(graph).toContain('nullsrc=s=270x480:r=10:d=6.000,format=gray,geq=');
+    expect(graph).toContain(
+      '[graded]format=gbrp[predust];[predust][dust]blend=all_mode=multiply:all_opacity=0.6:shortest=1,format=yuv420p,vignette=angle=0.80[dusty]',
+    );
+    expect(graph).toContain('[dusty]ass=filename=captions.ass');
+  });
+
+  it('scales the camera move for near-still scenes', () => {
+    expect(motionFilter('zoom-in', 1080, 1920, 3, 30)).toContain(
+      "scale=w='trunc(1080*(1+0.10*t/3.000)/2)*2'",
+    );
+    expect(motionFilter('zoom-in', 1080, 1920, 3, 30, 0.45)).toContain(
+      "scale=w='trunc(1080*(1+0.045*t/3.000)/2)*2'",
+    );
+    expect(motionFilter('pan-right', 1080, 1920, 3, 30, 0.45)).toContain(
+      "x='(in_w-out_w)*(0.5+0.45*(t/3.000-0.5))'",
+    );
+    expect(motionFilter('pan-left', 1080, 1920, 3, 30)).toContain("x='(in_w-out_w)*(1-t/3.000)'");
+    const graph = buildRenderArgs({ ...spec, motionStrength: 0.45 }).join(' ');
+    expect(graph).toContain('1+0.045*t/');
+  });
+
+  it('cover-crops any source aspect ratio, then moves within the 9:16 frame', () => {
     for (const m of ['zoom-in', 'zoom-out', 'pan-left', 'pan-right'] as const) {
       expect(motionFilter(m, 1080, 1920, 3, 30)).toMatch(
-        /^scale=1188:2112,.*crop=1080:1920.*format=yuv420p,settb=AVTB$/,
+        /^scale=1188:2112:force_original_aspect_ratio=increase,crop=1188:2112,.*crop=1080:1920.*format=yuv420p,settb=AVTB$/,
       );
     }
   });

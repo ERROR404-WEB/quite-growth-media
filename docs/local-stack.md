@@ -67,9 +67,10 @@ n8n's native modules don't support Node 26 yet, so n8n gets its own portable Nod
 ### First time in the n8n editor
 
 1. **Set up owner account**: enter your name, email and a strong password (stored only in your local n8n database). Skip the survey.
-2. **Open the workflow**: Overview → **QGM - Daily content scheduler**. The **Enqueue 27 daily jobs** node already uses the **QGM Admin Token** credential.
-3. **Test it** (with `npm run dev` running): click **Execute workflow**. ✅ Success: the last node shows output like `{"date":"…","brands":9,"created":27,"existing":0}`. A second run shows `created: 0, existing: 27`. That's idempotency working.
+2. **Open the workflow**: Overview → **QGM - Daily content scheduler**. The **Plan the daily videos** node already uses the **QGM Admin Token** credential.
+3. **Test it** (with `npm run dev` running): click **Execute workflow**. ✅ Success: the last node shows output like `{"date":"<tomorrow>","brands":3,"created":9,"existing":0}` (the 3 brands in `AUTOMATION_BRANDS`). A second run shows `created: 0, existing: 9`. That's idempotency working. ⚠️ With `npm run dev` running, the worker then **starts making those videos for real (OpenAI/ElevenLabs costs, capped by `DAILY_MAX_USD`)**.
 4. **Activate** it with the toggle at the top (Inactive → Active) to run every day at 06:00 (`APP_TIMEZONE`).
+5. **QGM - Publish due videos** calls `POST /api/publish/due` every 10 minutes. It does nothing until `PUBLISHING_ENABLED=true` and `BLOTATO_API_KEY` are set ([publishing.md](publishing.md#step-8--full-automation-built-switch-it-on-after-the-pilot-works)).
 
 > Running an n8n CLI command while n8n is already running? Set a different task-broker port first: `$env:N8N_RUNNERS_BROKER_PORT='5690'`.
 

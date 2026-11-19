@@ -14,16 +14,17 @@ All production work runs as rows in `generation_jobs`, processed by `JobWorker` 
 - **Non-retryable** (invalid input, policy/safety violation, licence problem) → throw `NonRetryableJobError`. The job is quarantined immediately.
 - Quarantined content is **never published**. The operator can requeue it through `POST /api/jobs/:id/requeue`.
 - Handlers must be safe to re-run after a crash: check whether the output already exists (e.g. a unique constraint, or an existing asset by checksum) before creating it.
-- Record provider spend in `cost_records` (brand_id, category, provider, amount, job_id).
-- Record every automated check in `compliance_results`.
+- Record provider spend in `cost_records` (brand_id, category, provider, amount, job_id) with `recordCosts` (`src/pipeline/shared.ts`).
+- Paid steps call `ensureDailyBudget(ctx, estimate, what)` first; over `DAILY_MAX_USD` it throws `DeferJobError`, which re-queues the job for tomorrow without using an attempt.
+- Record every automated check in `compliance_results` (`recordCompliance`).
 - Respect `ctx.signal` for long operations (shutdown).
 - Never log secrets, prompts containing personal data, or full provider responses with tokens.
 
 ## Steps
 
 1. Add the type name to `JOB_TYPES` in `src/domain/constants.ts` (format `area.action`, e.g. `script.generate`).
-2. Implement the handler in `src/pipeline/<area>/<action>.ts`, exporting `async (job, ctx) => result`. Validate `job.payload` with zod first and throw `NonRetryableJobError` on invalid payloads.
-3. Register it in `src/index.ts` with `worker.register(JOB_TYPES.x, handler)`. Unregistered types simply stay `queued`.
+2. Implement the handler in `src/pipeline/<step>.ts` as a factory `(ctx: PipelineContext) => async (job, jobCtx) => result`. Validate `job.payload` with `parsePayload(schema, job)` (quarantines invalid payloads). Call paid or external services only through `ctx.providers` (`src/pipeline/context.ts`), so tests can pass doubles.
+3. Register it in `registerPipeline` (`src/pipeline/index.ts`). Unregistered types simply stay `queued`.
 4. Enqueue the next step from the handler with `enqueue(db, { jobType, idempotencyKey, brandId, payload, parentJobId: job.id })`.
-5. Tests: unit-test pure logic; integration-test the handler against the test DB (see `tests/integration/queue.test.ts`). Mock external providers; tests must never call paid APIs.
+5. Tests: unit-test pure logic; integration-test the handler against the test DB with doubles for every provider (see `tests/integration/pipeline.test.ts`). Tests must never call paid APIs.
 6. Run `npm run check`.

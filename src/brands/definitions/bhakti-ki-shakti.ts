@@ -44,4 +44,21 @@ export const bhaktiKiShakti: BrandConfig = {
     pacing: 'Story-led with gentle zooms; slower for mantras',
     avoid: ['Disrespectful or comic depictions of deities', 'Fear-based messaging', 'Unverified miracles'],
   },
+  voice: {
+    direction:
+      'Calm, reverent Hindi male storyteller in his 40s; deep, smooth and devotional, with clear Sanskrit-friendly diction.',
+    elevenLabs: {
+      voiceId: 'qDuRKMlYmrm8trt5QyBn',
+      name: 'Taksh - Calm, Serious and Smooth',
+      source: 'library',
+    },
+    alternatives: [
+      { voiceId: '6EphsklDopDQ6eRkwNHT', name: 'Shardul K - Hindu Mythology Storyteller', source: 'library' },
+      {
+        voiceId: 'zlREppBW1FE7WsYs43Sz',
+        name: 'Yatin - Sacred & Divine Love Storyteller',
+        source: 'library',
+      },
+    ],
+  },
 };

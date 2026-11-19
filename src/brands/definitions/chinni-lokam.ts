@@ -51,4 +51,13 @@ export const chinniLokam: BrandConfig = {
       'Flashing lights',
     ],
   },
+  voice: {
+    direction:
+      'Chitti, an original cartoon parrot mascot: high-pitched, chirpy, funny and kind; sing-song for Telugu rhymes, gentle for stories.',
+    designPrompt:
+      'Native Telugu speaker with clear, natural Telugu pronunciation. An original animated cartoon character voice: Chitti, a tiny, friendly green parrot. High-pitched, bright, chirpy and funny, with cheerful giggles and a gentle sing-song rhythm for Telugu rhymes and bedtime stories. Warm and kind, never shrill, harsh or loud. Clean, studio-quality recording.',
+    previewText:
+      'హాయ్ పిల్లలూ! నేను చిట్టి, మీ చిన్ని చిలుకని. ఈ రోజు మనం కలిసి అంకెలు లెక్కపెడదాం. ఒకటి, రెండు, మూడు, నాలుగు, ఐదు! చూడండి, ఎన్ని మామిడి పండ్లో! రండి, చప్పట్లు కొడుతూ నాతో పాట పాడండి, లల్లల్లా!',
+    alternatives: [],
+  },
 };

@@ -40,5 +40,5 @@ compose exec -T n8n n8n import:credentials --input=/tmp/qgm-import/credentials.j
 info "Importing $count workflow(s)"
 compose exec -T n8n n8n import:workflow --separate --input=/tmp/qgm-import/workflows
 
-printf '\n✅ n8n bootstrap complete. In the n8n editor, open "QGM - Daily content scheduler",\n'
-printf '   click "Execute workflow" to test, then switch it to Active.\n'
+printf '\n✅ n8n bootstrap complete. In the n8n editor, open "QGM - Daily content scheduler" and\n'
+printf '   "QGM - Publish due videos", click "Execute workflow" on each to test, then switch them to Active.\n'

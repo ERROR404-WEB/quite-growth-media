@@ -26,15 +26,19 @@ export function contentPlanKey(brandId: string, date: string, slot: number): str
 
 /**
  * Enqueues one independent content.plan job per active brand per content slot for the date.
+ * `brandIds` limits the run to those brands (undefined or ["all"] = every active brand).
  * Idempotent: calling it again for the same date creates nothing new.
  */
 export async function scheduleDaily(
   db: Queryable,
   date: string,
   maxAttempts: number,
+  brandIds?: readonly string[],
 ): Promise<DailyScheduleResult> {
+  const all = !brandIds || brandIds.includes('all');
   const { rows } = await db.query<{ id: string; config: BrandConfig }>(
-    'SELECT id, config FROM brands WHERE is_active ORDER BY brand_number',
+    'SELECT id, config FROM brands WHERE is_active AND ($1::text[] IS NULL OR id = ANY($1)) ORDER BY brand_number',
+    [all ? null : brandIds],
   );
   let created = 0;
   let existing = 0;

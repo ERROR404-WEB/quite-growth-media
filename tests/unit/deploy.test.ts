@@ -50,7 +50,8 @@ describe('deployment files', () => {
   });
 
   it('keeps the workflow URL that n8n-bootstrap.sh rewrites to http://api:3000', () => {
-    expect(read('n8n', 'workflows', 'daily-scheduler.json')).toContain('"value": "http://127.0.0.1:3000"');
+    for (const wf of ['daily-scheduler.json', 'publish-due.json'])
+      expect(read('n8n', 'workflows', wf), wf).toContain('"value": "http://127.0.0.1:3000"');
     expect(read('deploy', 'scripts', 'n8n-bootstrap.sh')).toContain('"value": "http://127.0.0.1:3000"');
   });
 

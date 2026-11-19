@@ -8,8 +8,11 @@ import { healthRoutes } from './routes/health.js';
 
 export interface AppDeps {
   db: Db;
-  env: Pick<AppEnv, 'ADMIN_API_TOKEN' | 'APP_TIMEZONE' | 'JOB_MAX_ATTEMPTS'>;
+  env: Pick<AppEnv, 'ADMIN_API_TOKEN' | 'APP_TIMEZONE' | 'JOB_MAX_ATTEMPTS'> &
+    Partial<Pick<AppEnv, 'AUTOMATION_BRANDS' | 'SCHEDULE_LEAD_DAYS'>>;
   logger: Logger;
+  /** Automatic publishing switch (PUBLISHING_ENABLED + BLOTATO_API_KEY); off when absent. */
+  publishing?: { enabled: boolean; reason?: string };
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {

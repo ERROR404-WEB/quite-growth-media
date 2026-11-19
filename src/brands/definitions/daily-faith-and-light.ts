@@ -42,4 +42,16 @@ export const dailyFaithAndLight: BrandConfig = {
     pacing: 'Gentle fades and slow parallax; calm and reassuring',
     avoid: ['Religion-specific iconography', 'Fear-based messaging', 'Prosperity promises'],
   },
+  voice: {
+    direction:
+      'Warm, reassuring American woman; gentle, hopeful and comforting - like a kind friend, non-denominational.',
+    elevenLabs: {
+      voiceId: 'DLsHlh26Ugcm6ELvS0qi',
+      name: 'Ms. Walker - Warm, Reassuring, and Round',
+      source: 'library',
+    },
+    alternatives: [
+      { voiceId: '7AvtJrjTNyBhBxEvNPIZ', name: 'Rhythm - Calm & Friendly Meditation', source: 'library' },
+    ],
+  },
 };

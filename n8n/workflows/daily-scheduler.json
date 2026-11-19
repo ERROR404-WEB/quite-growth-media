@@ -62,7 +62,7 @@
         }
       },
       "id": "5f0b6c1e-0004-4a51-9a3e-000000000004",
-      "name": "Enqueue 27 daily jobs",
+      "name": "Plan the daily videos",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 100],
@@ -75,7 +75,7 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000,
-      "notes": "Idempotent: calling twice on the same day creates no duplicates. Uses the 'QGM Admin Token' Header Auth credential."
+      "notes": "Plans tomorrow's videos (SCHEDULE_LEAD_DAYS) for the brands in AUTOMATION_BRANDS. Idempotent: calling twice on the same day creates no duplicates. Uses the 'QGM Admin Token' Header Auth credential."
     }
   ],
   "connections": {
@@ -86,7 +86,7 @@
       "main": [[{ "node": "Config (edit API URL here)", "type": "main", "index": 0 }]]
     },
     "Config (edit API URL here)": {
-      "main": [[{ "node": "Enqueue 27 daily jobs", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Plan the daily videos", "type": "main", "index": 0 }]]
     }
   },
   "settings": {

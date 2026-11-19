@@ -36,6 +36,10 @@ Docker Desktop on the current work laptop fails with WSL error `0x80070569` ("us
 - **Port 3000 in use**: find the PID with `Get-NetTCPConnection -LocalPort 3000 -State Listen` and stop it with `Stop-Process -Id <PID>`.
 - **n8n "not installed"**: see the "Native n8n" section of `docs/local-stack.md`.
 - **Downloads fail with `CRYPT_E_NO_REVOCATION_CHECK`**: the corporate proxy blocks the revocation check. Use `curl.exe --ssl-no-revoke`.
+- **OpenAI/API calls fail with `fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`**: the corporate network re-signs HTTPS.
+  - Run Node with `--use-system-ca` (already in `npm run dev`, `start`, `video:ai`, `video:revoice` and `voices:*`).
+  - For a one-off script, use `npx tsx --use-system-ca file.ts`.
+  - Never set `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 - **Integration tests skipped**: `TEST_DATABASE_URL` is missing from `.env`, or Postgres is down.
 
 Never run `docker compose down -v` or delete `data/postgres`. That destroys the database (the hooks block it).

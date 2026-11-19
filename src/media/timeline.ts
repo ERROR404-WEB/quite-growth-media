@@ -1,7 +1,10 @@
 import type { Language } from '../domain/constants.js';
 
-/** Approximate natural narration pace (words per second) used when no voice audio exists yet. */
-const WORDS_PER_SECOND: Record<Language, number> = { en: 2.6, hi: 2.4, te: 1.9 };
+/**
+ * Approximate narration pace (words per second) used before voice audio exists. Calibrated on the
+ * 18 Nov 2026 ElevenLabs v4 test runs: English ran faster than 2.6, Telugu ~20 % slower than 1.9.
+ */
+export const WORDS_PER_SECOND: Record<Language, number> = { en: 2.8, hi: 2.4, te: 1.6 };
 export const SCENE_PADDING_SEC = 0.7;
 export const MIN_SCENE_SEC = 2.5;
 
@@ -10,9 +13,9 @@ export function estimateSpeechSeconds(text: string, language: Language): number 
   return words / WORDS_PER_SECOND[language];
 }
 
-/** Scene length: narration length plus breathing room, never shorter than MIN_SCENE_SEC. */
-export function sceneDuration(speechSec: number): number {
-  return Math.max(MIN_SCENE_SEC, Math.round((speechSec + SCENE_PADDING_SEC) * 100) / 100);
+/** Scene length: narration + breathing room + any scripted pause ([BEAT]/[PAUSE]), min MIN_SCENE_SEC. */
+export function sceneDuration(speechSec: number, pauseSec = 0): number {
+  return Math.max(MIN_SCENE_SEC, Math.round((speechSec + SCENE_PADDING_SEC + pauseSec) * 100) / 100);
 }
 
 export interface TimelineEntry {

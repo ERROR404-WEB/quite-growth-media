@@ -1,8 +1,8 @@
 import { hostname } from 'node:os';
 import type { Db } from '../db/pool.js';
 import type { Logger } from '../logger.js';
-import { claimNext, markFailed, markSucceeded, recoverStaleJobs } from './queue.js';
-import { NonRetryableJobError, type JobHandler } from './types.js';
+import { claimNext, deferJob, markFailed, markSucceeded, recoverStaleJobs } from './queue.js';
+import { DeferJobError, NonRetryableJobError, type JobHandler } from './types.js';
 
 export interface WorkerOptions {
   pollIntervalMs: number;
@@ -77,6 +77,11 @@ export class JobWorker {
       log.info('job succeeded');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      if (err instanceof DeferJobError) {
+        await deferJob(this.db, job.id, err.runAt, message);
+        log.info({ runAt: err.runAt.toISOString(), reason: message }, 'job deferred');
+        return true;
+      }
       const outcome = await markFailed(this.db, job, message, !(err instanceof NonRetryableJobError));
       if (outcome === 'quarantined') {
         // Operator notification hook point (n8n / email / chat) - Phase 6.

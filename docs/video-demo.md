@@ -28,15 +28,15 @@ Options:
 
 ## What is real and what is a placeholder
 
-| Step               | Today (free, local)                                                                                                                 | Production (Phase 4–5, after you approve providers and cost)                 |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Script             | Hand-written demo scripts                                                                                                           | OpenAI, per brand, with originality, fact, scripture and child-safety checks |
-| Illustrations      | **Placeholder** storybook scenes drawn in code from each brand's palette                                                            | Chosen image provider (original characters, commercial licence recorded)     |
-| Voice              | Windows test voice (English only) or none                                                                                           | Chosen multilingual voice provider (EN/HI/TE, pronunciation-tested)          |
-| Captions           | ✅ Real: timed, word-wrapped, safe margins, Noto fonts for Latin/Devanagari/Telugu                                                  | Same, timed from the voice provider's word timestamps                        |
-| Motion and editing | ✅ Real: Ken Burns zoom/pan, crossfades, soft synthesized music bed, loudness normalisation (−16 LUFS)                              | Same, plus brand-specific styles                                             |
-| Rendering          | ✅ Real FFmpeg pipeline (`src/media/render.ts`)                                                                                     | Same code, run by the job worker on the VPS                                  |
-| Automated QA       | ✅ Real: MP4 integrity (full decode), codec, 1080×1920, 9:16, fps, duration bucket (7–45 s), audio present, not silent, no clipping | Same, plus image, audio and subtitle checks (Phase 6)                        |
+| Step               | Today (free, local)                                                                                                                 | Production (Phase 4–5, after you approve providers and cost)                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Script             | Hand-written demo scripts                                                                                                           | OpenAI, per brand, with originality, fact, scripture and child-safety checks                                    |
+| Illustrations      | **Placeholder** storybook scenes drawn in code from each brand's palette                                                            | **OpenAI `gpt-image-2.6-flare`**, already integrated: `npm run video:ai` ([ai-video-test.md](ai-video-test.md)) |
+| Voice              | Windows test voice (English only) or none                                                                                           | Chosen multilingual voice provider (EN/HI/TE, pronunciation-tested)                                             |
+| Captions           | ✅ Real: timed, word-wrapped, safe margins, Noto fonts for Latin/Devanagari/Telugu                                                  | Same, timed from the voice provider's word timestamps                                                           |
+| Motion and editing | ✅ Real: Ken Burns zoom/pan, crossfades, soft synthesized music bed, loudness normalisation (−16 LUFS)                              | Same, plus brand-specific styles                                                                                |
+| Rendering          | ✅ Real FFmpeg pipeline (`src/media/render.ts`)                                                                                     | Same code, run by the job worker on the VPS                                                                     |
+| Automated QA       | ✅ Real: MP4 integrity (full decode), codec, 1080×1920, 9:16, fps, duration bucket (7–45 s), audio present, not silent, no clipping | Same, plus image, audio and subtitle checks (Phase 6)                                                           |
 
 The "DEMO · placeholder art & voice" label at the top of each video marks it as a test render. Demo videos must not be published.
 
@@ -45,9 +45,9 @@ The "DEMO · placeholder art & voice" label at the top of each video marks it as
 `src/media/pipeline.ts` → `produceVideo()`:
 
 1. **Narration** for each scene, from a `VoiceProvider`, or an estimated speaking time when none exists.
-2. **Timeline:** each scene lasts as long as its narration plus 0.7 s, with 0.5 s crossfades.
+2. **Timeline:** each scene lasts as long as its narration plus 0.7 s, with 0.5 s crossfades (brands with `visualIdentity.motion` set their own, e.g. 0.35 s for the calm self-improvement look).
 3. **Illustrations:** today `renderPlaceholderScene()`; later the illustration provider.
-4. **Captions:** the narration is split into short chunks and written to an ASS file with a font for the right script.
+4. **Captions:** the narration is split into short chunks and written to an ASS file with a font for the right script. The style comes from `visualIdentity.captionStyle`: `bold` (Noto Sans, lower-middle) or `soft_handwritten` (Kalam/Timmana, centred, 2–4 words).
 5. **FFmpeg render**, then a thumbnail.
 6. **QA** with ffprobe and a full decode, then `manifest.json`.
 

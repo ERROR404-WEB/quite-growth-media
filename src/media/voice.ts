@@ -1,18 +1,74 @@
-import { writeFileSync } from 'node:fs';
+import { copyFileSync, writeFileSync } from 'node:fs';
+import { extname } from 'node:path';
 import type { Language } from '../domain/constants.js';
 import type { FfmpegTools } from './ffmpeg.js';
 import { mediaDuration, resolveFfmpeg, run } from './ffmpeg.js';
 
+/** Character-level timing of the spoken text, relative to the start of the clip. */
+export interface SpeechAlignment {
+  characters: string[];
+  starts: number[];
+  ends: number[];
+}
+
 export interface NarrationClip {
   file: string;
   durationSec: number;
+  /** When the provider returns timings, captions are synced to the actual speech. */
+  alignment?: SpeechAlignment;
+  /** Spend for this clip in USD (0 for local voices). */
+  costUsd?: number;
+  provenance?: Record<string, unknown>;
 }
 
-/** A text-to-speech provider. The production provider (EN/HI/TE) is chosen in Phase 5. */
+export interface SpeechContext {
+  brandId: string;
+  /** Neighbouring narration, so the provider keeps intonation continuous across scenes. */
+  previousText?: string;
+  nextText?: string;
+  /** Short delivery direction ("soft, aching"); providers that support audio tags voice it, others ignore it. */
+  direction?: string;
+  signal?: AbortSignal;
+}
+
+/** A text-to-speech provider (local test voice, or ElevenLabs in production). */
 export interface VoiceProvider {
   readonly name: string;
-  supports(language: Language): boolean;
-  synthesize(text: string, language: Language, outFile: string): Promise<NarrationClip>;
+  supports(language: Language, brandId?: string): boolean;
+  synthesize(
+    text: string,
+    language: Language,
+    outFile: string,
+    context?: SpeechContext,
+  ): Promise<NarrationClip>;
+}
+
+/**
+ * Reuses the narration of an earlier render (same script) - e.g. for a platform-specific version
+ * with different music. Costs nothing; timings are kept so captions stay synced.
+ */
+export class ReusedNarration implements VoiceProvider {
+  readonly name: string;
+
+  constructor(
+    sourceName: string,
+    private readonly clips: readonly (NarrationClip | undefined)[],
+  ) {
+    this.name = `${sourceName} (reused narration)`;
+  }
+
+  supports(): boolean {
+    return this.clips.some(Boolean);
+  }
+
+  async synthesize(_text: string, _language: Language, outFile: string): Promise<NarrationClip> {
+    const index = Number(/narration-(\d+)\.[a-z0-9]+$/i.exec(outFile)?.[1]) - 1;
+    const clip = this.clips[index];
+    if (!clip) throw new Error(`No reusable narration for ${outFile}`);
+    const file = outFile.replace(/\.[a-z0-9]+$/i, extname(clip.file));
+    copyFileSync(clip.file, file);
+    return { ...clip, file, costUsd: 0 };
+  }
 }
 
 // Text and paths are passed through environment variables, never interpolated into the script.

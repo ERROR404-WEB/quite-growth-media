@@ -4,6 +4,8 @@ import { createPool } from './db/pool.js';
 import { JOB_TYPES } from './domain/constants.js';
 import { JobWorker } from './jobs/worker.js';
 import { createLogger } from './logger.js';
+import { createPipelineContext, pipelineSettings, registerPipeline } from './pipeline/index.js';
+import { getBlotatoConfig } from './publishing/config.js';
 import { buildApp } from './server/app.js';
 
 async function main(): Promise<void> {
@@ -16,14 +18,33 @@ async function main(): Promise<void> {
     logger.warn({ pending: status.pending }, 'pending migrations - run: npm run db:migrate');
   }
 
-  const app = await buildApp({ db, env, logger });
+  const settings = pipelineSettings(env);
+  const blotatoKey = !!getBlotatoConfig().BLOTATO_API_KEY;
+  const publishing = {
+    enabled: env.PUBLISHING_ENABLED && blotatoKey,
+    reason: !env.PUBLISHING_ENABLED
+      ? 'PUBLISHING_ENABLED is false'
+      : blotatoKey
+        ? undefined
+        : 'BLOTATO_API_KEY is not set',
+  };
+  const app = await buildApp({ db, env, logger, publishing });
 
   const worker = new JobWorker(db, logger, {
     pollIntervalMs: env.JOB_POLL_INTERVAL_MS,
     staleLockMinutes: env.JOB_STALE_LOCK_MINUTES,
   });
-  // Real pipeline handlers (content.plan, script.generate, ...) are registered in Phase 4+.
   worker.register(JOB_TYPES.systemNoop, async (job) => ({ ok: true, echo: job.payload }));
+  registerPipeline(worker, createPipelineContext(db, logger, settings));
+  logger.info(
+    {
+      automationBrands: settings.automationBrands,
+      renderMode: settings.renderMode,
+      dailyMaxUsd: settings.dailyMaxUsd,
+      publishing,
+    },
+    'pipeline configured',
+  );
 
   await app.listen({ host: env.HOST, port: env.PORT });
   if (env.JOB_WORKER_ENABLED) await worker.start();

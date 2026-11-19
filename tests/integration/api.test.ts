@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Db } from '../../src/db/pool.js';
+import { todayIn } from '../../src/jobs/schedule.js';
+import { addDays } from '../../src/jobs/time.js';
 import { createLogger } from '../../src/logger.js';
 import { buildApp } from '../../src/server/app.js';
 import { createFreshTestDb, testDatabaseUrl } from '../helpers/db.js';
@@ -70,6 +72,51 @@ describe.skipIf(!testDatabaseUrl())('HTTP API (integration)', () => {
     expect(new Set(list.map((j) => j.brand_id)).size).toBe(9);
   });
 
+  it('limits the daily plan to the automation brands and plans ahead by default', async () => {
+    const pilot = await buildApp({
+      db,
+      logger: createLogger('silent'),
+      env: {
+        ADMIN_API_TOKEN: TOKEN,
+        APP_TIMEZONE: 'Asia/Kolkata',
+        JOB_MAX_ATTEMPTS: 3,
+        AUTOMATION_BRANDS: ['quiet-growth', 'behtar-bano'],
+        SCHEDULE_LEAD_DAYS: 1,
+      },
+    });
+    try {
+      const res = await pilot.inject({
+        method: 'POST',
+        url: '/api/schedule/daily',
+        headers: auth,
+        payload: {},
+      });
+      expect(res.json()).toEqual({
+        date: addDays(todayIn('Asia/Kolkata'), 1),
+        brands: 2,
+        created: 6,
+        existing: 0,
+      });
+    } finally {
+      await pilot.close();
+    }
+  });
+
+  it('does not publish until publishing is enabled, and lists videos and publications', async () => {
+    expect((await app.inject({ method: 'POST', url: '/api/publish/due' })).statusCode).toBe(401);
+    const due = await app.inject({ method: 'POST', url: '/api/publish/due', headers: auth });
+    expect(due.json()).toMatchObject({ enabled: false, enqueued: 0 });
+    expect((await app.inject('/api/videos')).json()).toEqual({ videos: [] });
+    expect((await app.inject('/api/publications?status=needs_check')).json()).toEqual({ publications: [] });
+    expect((await app.inject('/api/publications?status=bogus')).statusCode).toBe(400);
+    const retry = await app.inject({
+      method: 'POST',
+      url: '/api/publications/00000000-0000-4000-8000-000000000000/retry',
+      headers: auth,
+    });
+    expect(retry.statusCode).toBe(409);
+  });
+
   it('validates input', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -100,7 +147,7 @@ describe.skipIf(!testDatabaseUrl())('schema constraints (integration)', () => {
     await db?.end();
   });
 
-  it('creates all 15 domain tables', async () => {
+  it('creates all 17 domain tables', async () => {
     const { rows } = await db.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> 'schema_migrations'`,
     );
@@ -109,6 +156,8 @@ describe.skipIf(!testDatabaseUrl())('schema constraints (integration)', () => {
         'analytics',
         'asset_licences',
         'assets',
+        'audio_library_assets',
+        'audio_library_usages',
         'brands',
         'compliance_results',
         'content_ideas',
@@ -139,6 +188,17 @@ describe.skipIf(!testDatabaseUrl())('schema constraints (integration)', () => {
          VALUES ('bad-kids', 50, 'Bad', 'en', 'en-US', 'kids', 'kids', true, 'UTC')`,
       ),
     ).rejects.toThrow(/brands_kids_need_age_range/);
+  });
+
+  it('stores one video per platform version and tracks unclear publications', async () => {
+    const { rows } = await db.query<{ conname: string; def: string }>(
+      `SELECT conname, pg_get_constraintdef(oid) AS def FROM pg_constraint
+        WHERE conname IN ('publications_status_check', 'videos_script_variant_unique', 'videos_script_unique')`,
+    );
+    const defs = Object.fromEntries(rows.map((r) => [r.conname, r.def]));
+    expect(defs.publications_status_check).toContain('needs_check');
+    expect(defs.videos_script_variant_unique).toBe('UNIQUE (script_id, variant)');
+    expect(defs.videos_script_unique).toBeUndefined();
   });
 
   it('refuses rows for unknown brands', async () => {

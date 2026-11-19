@@ -32,6 +32,7 @@ npm run dev            # http://127.0.0.1:3000
 Then run `npm run check` (typecheck, lint and tests). For n8n and day-to-day use, see [docs/local-stack.md](docs/local-stack.md).
 
 To test video rendering (free, no API keys): `npm run video:demo`. See [docs/video-demo.md](docs/video-demo.md).
+To make a real AI test video with OpenAI (script + illustrations, spend-capped): `npm run video:ai -- --brand quiet-growth`. See [docs/ai-video-test.md](docs/ai-video-test.md).
 Where Docker works, `npm run stack:up` starts Postgres and n8n instead of `pg:*` / `n8n:start`.
 
 ## Production (VPS)
@@ -40,17 +41,21 @@ The VPS runs the production stack in `deploy/` (Docker Compose: PostgreSQL, API 
 
 ## API
 
-| Method | Path                    | Auth         | Purpose                                      |
-| ------ | ----------------------- | ------------ | -------------------------------------------- |
-| GET    | `/`                     | –            | Control-room dashboard                       |
-| GET    | `/health`               | –            | Liveness                                     |
-| GET    | `/health/ready`         | –            | DB, migrations and brands readiness          |
-| GET    | `/api/brands`           | –            | Brands                                       |
-| GET    | `/api/brands/:id`       | –            | One brand incl. full config                  |
-| GET    | `/api/jobs`             | –            | Jobs (`?status=&brandId=&limit=`)            |
-| GET    | `/api/jobs/summary`     | –            | Job counts by brand and status               |
-| POST   | `/api/schedule/daily`   | Bearer token | Enqueue each brand's daily jobs (idempotent) |
-| POST   | `/api/jobs/:id/requeue` | Bearer token | Requeue a quarantined job                    |
+| Method | Path                          | Auth         | Purpose                                                     |
+| ------ | ----------------------------- | ------------ | ----------------------------------------------------------- |
+| GET    | `/`                           | –            | Control-room dashboard                                      |
+| GET    | `/health`                     | –            | Liveness                                                    |
+| GET    | `/health/ready`               | –            | DB, migrations and brands readiness                         |
+| GET    | `/api/brands`                 | –            | Brands                                                      |
+| GET    | `/api/brands/:id`             | –            | One brand incl. full config                                 |
+| GET    | `/api/jobs`                   | –            | Jobs (`?status=&brandId=&limit=`)                           |
+| GET    | `/api/jobs/summary`           | –            | Job counts by brand and status                              |
+| POST   | `/api/schedule/daily`         | Bearer token | Plan tomorrow's videos for `AUTOMATION_BRANDS` (idempotent) |
+| POST   | `/api/jobs/:id/requeue`       | Bearer token | Requeue a quarantined job                                   |
+| GET    | `/api/videos`                 | –            | Rendered videos (`?brandId=&limit=`)                        |
+| GET    | `/api/publications`           | –            | Publications (`?status=&brandId=&limit=`)                   |
+| POST   | `/api/publish/due`            | Bearer token | Queue due posts (does nothing until publishing is enabled)  |
+| POST   | `/api/publications/:id/retry` | Bearer token | Retry a failed, skipped or needs_check post                 |
 
 ## Documentation
 
@@ -58,6 +63,10 @@ The VPS runs the production stack in `deploy/` (Docker Compose: PostgreSQL, API 
 - [docs/local-stack.md](docs/local-stack.md): running Postgres, the API and n8n locally
 - [docs/phase-2-vps.md](docs/phase-2-vps.md): VPS provider comparison and step-by-step server deployment
 - [docs/video-demo.md](docs/video-demo.md): test the video render + QA pipeline locally
+- [docs/ai-video-test.md](docs/ai-video-test.md): add your OpenAI key and make an AI-generated test video
+- [docs/voices.md](docs/voices.md): ElevenLabs setup, one fixed voice per brand, kids mascot voices
+- [docs/creative-direction.md](docs/creative-direction.md): the master creative prompt (story, visuals, sound, metadata, QA) and where it lives in the code
+- [docs/audio-library.md](docs/audio-library.md): adding licence-verified music and sound effects (`npm run audio:import`)
 - [docs/architecture.md](docs/architecture.md): design, job lifecycle, module map
 - [docs/roadmap.md](docs/roadmap.md): phases 1–9 checklist
 - [AGENTS.md](AGENTS.md): rules for AI coding agents (GitHub Copilot)

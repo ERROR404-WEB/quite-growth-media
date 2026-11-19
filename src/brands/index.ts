@@ -38,6 +38,15 @@ export function validateBrands(brands: BrandConfig[]): BrandConfig[] {
       seen.add(b[key]);
     }
   }
+  // Every brand keeps its own recognisable narrator: no voice is shared between brands.
+  const voiceOwner = new Map<string, string>();
+  for (const b of parsed) {
+    const id = b.voice?.elevenLabs?.voiceId;
+    if (!id) continue;
+    const other = voiceOwner.get(id);
+    if (other) errors.push(`duplicate voice: ${b.id} and ${other} both use ${id}`);
+    voiceOwner.set(id, b.id);
+  }
   if (errors.length) throw new Error(`Invalid brand configuration:\n  ${errors.join('\n  ')}`);
   return [...parsed].sort((a, b) => a.brandNumber - b.brandNumber);
 }

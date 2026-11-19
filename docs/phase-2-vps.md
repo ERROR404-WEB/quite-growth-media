@@ -235,11 +235,12 @@ Open the dashboard URL in your browser and log in. You should see the **Quiet Gr
    bash deploy/scripts/n8n-bootstrap.sh
    ```
 
-   **Success:** `Successfully imported 1 credential.`, then `Successfully imported 1 workflow.`
+   **Success:** `Successfully imported 1 credential.`, then `Successfully imported 2 workflows.`
 
 3. In n8n, open **QGM - Daily content scheduler** and click **Execute workflow**.
-   **Success:** the last node shows `"created": 27` (or `"existing": 27` if today's jobs already exist).
+   **Success:** the last node shows `"brands": 3, "created": 9` (tomorrow's videos for the brands in `AUTOMATION_BRANDS`), or `"existing": 9` if they were already planned. The worker starts making them right away (AI costs, capped by `DAILY_MAX_USD`).
 4. Switch the workflow to **Active**. It now runs every day at 06:00 (Asia/Kolkata).
+5. Leave **QGM - Publish due videos** inactive until publishing is set up ([publishing.md](publishing.md), Step 8). Then set `PUBLISHING_ENABLED=true` in `deploy/.env` (`nano deploy/.env`), run `bash deploy/scripts/deploy.sh`, and switch that workflow to **Active**.
 
 ---
 
@@ -273,7 +274,7 @@ Backups contain `deploy/.env`, which holds secrets, so keep them private.
 - [ ] HTTPS works on both addresses (padlock in the browser)
 - [ ] The dashboard asks for a password; n8n asks for its own login
 - [ ] `https://APP_DOMAIN/health/ready` shows `"status":"ready"` (after logging in)
-- [ ] n8n workflow executed (27 jobs) and set to Active
+- [ ] n8n daily workflow executed (9 videos planned) and set to Active; publish workflow imported
 - [ ] Backup and restore test passed; nightly backup scheduled
 - [ ] `ssh root@SERVER_IP` is refused; `ssh qgm@SERVER_IP` works
 

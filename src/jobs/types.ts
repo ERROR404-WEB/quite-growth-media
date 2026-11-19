@@ -45,3 +45,17 @@ export class NonRetryableJobError extends Error {
     this.name = 'NonRetryableJobError';
   }
 }
+
+/**
+ * Throw this to postpone a job without using up an attempt (e.g. the daily spend cap is reached or
+ * a publication is not due yet). The worker re-queues it for `runAt`.
+ */
+export class DeferJobError extends Error {
+  constructor(
+    message: string,
+    readonly runAt: Date,
+  ) {
+    super(message);
+    this.name = 'DeferJobError';
+  }
+}
